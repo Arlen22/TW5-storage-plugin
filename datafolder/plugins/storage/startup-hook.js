@@ -1,5 +1,5 @@
 /*\
-title: $:/plugins/arlen22/storage/startup/commands.js
+title: $:/plugins/arlen22/storage/startup-hook.js
 type: application/javascript
 module-type: startup
 

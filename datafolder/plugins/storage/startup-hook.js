@@ -20,8 +20,8 @@ Command processing
 
   exports.startup = function () {
     $tw.hooks.addHook("th-server-command-post-start", (wikiServer, nodeServer, platform) => {
-      var PouchDB = require("../../TW5-PouchDBAdaptor/node_modules/pouchdb");
-      PouchDB.plugin(require('../../TW5-PouchDBAdaptor/node_modules/pouchdb-adapter-node-websql'));
+      var PouchDB = require("pouchdb");
+      PouchDB.plugin(require('pouchdb-adapter-node-websql'));
       wikiServer.database = new PouchDB(require('path').resolve($tw.boot.wikiPath, 'mydatabase.db'), { adapter: "websql" });
     });
   };

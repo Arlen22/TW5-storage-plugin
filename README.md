@@ -1,8 +1,8 @@
 To test this run 
 
-```
-cd /tiddlywiki/or/tiddlyserver/directory
+```sh
+# run this in the tiddlywiki or tiddlyserver installation directory
 npm install pouchdb pouchdb-adapter-node-websql --prod
-cd /this/folder
+# run this in this folder
 node /path/to/tiddlywiki.js ./datafolder --listen
 ```

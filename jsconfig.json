@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "baseUrl": ".",
+    "paths": {
+      "$:/boot/*": ["../TiddlyWiki5-Arlen22/boot/*"],
+      "$:/core/*": ["../TiddlyWiki5-Arlen22/core/*"],
+      "$:/plugins/*": ["../TiddlyWiki5-Arlen22/plugins/*"],
+      "$:/plugins/arlen22/storage/*": ["datafolder/plugins/storage-data/*"]
+    }
+  },
+  "include": ["."]
+}

@@ -1,0 +1,8 @@
+{
+	"title": "$:/plugins/arlen22/storage",
+	"description": "A command that serves TW5 and uses pouchdb as the back-end \nnpm install pouchdb pouchdb-adapter-node-websql",
+	"author": "arlen22",
+	"core-version": ">=5.1.21",
+	"list": "readme",
+	"version": "1.0.0"
+}

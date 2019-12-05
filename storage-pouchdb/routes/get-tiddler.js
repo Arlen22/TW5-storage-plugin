@@ -6,6 +6,7 @@ module-type: route
 GET /recipes/default/tiddlers/:title
 
 \*/
+/// <reference path="../../types.d.ts" />
 (function () {
 
 	/*jslint node: true, browser: true */
@@ -14,12 +15,20 @@ GET /recipes/default/tiddlers/:title
 
 	exports.method = "GET";
 
-	exports.path = /^\/recipes\/default\/tiddlers\/(.+)$/;
+	exports.path = /^\/recipes\/([^\/]+)\/tiddlers\/(.+)$/;
 
 	exports.handler = function (request, response, state) {
-		var title = decodeURIComponent(state.params[0]);
+		var recipe = decodeURIComponent(state.params[0]);
+		var title = decodeURIComponent(state.params[1]);
+		/** @type {PouchDB.Database} */
 		var db = state.server.database;
-		db.get(title).then(doc => {
+		//I'm not sure yet what the TiddlyWeb spec is on this
+		db.allDocs({
+			keys: db.getIDsFromRecipeTitle(recipe, title)
+		}).then(docs => {
+			console.log(docs);
+		});
+		db.get(db.getIDFromBagTitle("default", title)).then(doc => {
 			doc.fields.revision = doc.revision;
 			doc.fields.type = doc.fields.type || "text/vnd.tiddlywiki";
 			var text = JSON.stringify(doc.fields);

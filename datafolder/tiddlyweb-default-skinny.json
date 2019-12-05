@@ -1,0 +1,23 @@
+[
+  {
+    "created": "2019-12-05T00:48:51.147Z",
+    "title": "$:/StoryList",
+    "list": [
+      "Test",
+      "GettingStarted"
+    ],
+    "modified": "2019-12-05T00:49:18.636Z",
+    "type": "text/vnd.tiddlywiki",
+    "revision": "17",
+    "bag": "default"
+  },
+  {
+    "created": "2019-12-04T21:50:54.201Z",
+    "modified": "2019-12-05T00:49:18.644Z",
+    "revision": "5",
+    "tags": [],
+    "title": "Test",
+    "type": "text/vnd.tiddlywiki",
+    "bag": "default"
+  }
+]

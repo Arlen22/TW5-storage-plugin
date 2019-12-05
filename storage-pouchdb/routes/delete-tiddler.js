@@ -6,6 +6,7 @@ module-type: route
 DELETE /recipes/default/tiddlers/:title
 
 \*/
+/// <reference path="../../types.d.ts" />
 (function () {
 
 	/*jslint node: true, browser: true */
@@ -14,13 +15,15 @@ DELETE /recipes/default/tiddlers/:title
 
 	exports.method = "DELETE";
 
-	exports.path = /^\/bags\/default\/tiddlers\/(.+)$/;
+	exports.path = /^\/bags\/([^\/]+)\/tiddlers\/(.+)$/;
 
 	exports.handler = function (request, response, state) {
-		var title = decodeURIComponent(state.params[0]);
+		var bag = decodeURIComponent(state.params[0]);
+		var title = decodeURIComponent(state.params[1]);
 		/** @type {PouchDB.Database} */
 		var db = state.server.database;
-		db.get(title).then(doc => {
+		var id = db.getIDFromBagTitle(bag, title);
+		db.get(id).then(doc => {
 			doc._deleted = true;
 			return db.put(doc).then(ok => 204);
 		}).catch(err => {

@@ -1,7 +1,6 @@
 {
 	"description": "PouchDB test edition",
 	"plugins": [
-		"arlen22/storage-adapter",
 		"tiddlywiki/filesystem",
 		"tiddlywiki/tiddlyweb"
 	],

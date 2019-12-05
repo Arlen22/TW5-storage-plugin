@@ -1,13 +1,19 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "ES5",
+    "module": "CommonJS",
     "baseUrl": ".",
     "paths": {
       "$:/boot/*": ["../TiddlyWiki5-Arlen22/boot/*"],
       "$:/core/*": ["../TiddlyWiki5-Arlen22/core/*"],
       "$:/plugins/*": ["../TiddlyWiki5-Arlen22/plugins/*"],
       "$:/plugins/arlen22/storage/*": ["storage/*"]
-    }
+    },
+    "inlineSourceMap": true
   },
-  "include": ["."]
+  "files": ["./storage-filesystem/startup-hook.ts"],
+  "typeAcquisition": {
+    "enable": true,
+    "include": ["@types/node"]
+  }
 }

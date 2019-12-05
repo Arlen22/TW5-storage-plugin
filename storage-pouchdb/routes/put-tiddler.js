@@ -6,6 +6,7 @@ module-type: route
 PUT /recipes/default/tiddlers/:title
 
 \*/
+/// <reference path="../../types.d.ts" />
 (function () {
 
 	/*jslint node: true, browser: true */
@@ -14,23 +15,30 @@ PUT /recipes/default/tiddlers/:title
 
 	exports.method = "PUT";
 
-	exports.path = /^\/recipes\/default\/tiddlers\/(.+)$/;
+	exports.path = /^\/recipes\/([^\/]+)\/tiddlers\/(.+)$/;
 
 	exports.handler = function (request, response, state) {
 		/** @type {PouchDB.Database} */
 		var db = state.server.database;
-		var title = decodeURIComponent(state.params[0]),
+		var recipe = decodeURIComponent(state.params[0]);
+		var title = decodeURIComponent(state.params[1]),
 			tiddlerFields = JSON.parse(state.data);
-
+		var id = db.getIDFromBagTitle("default", title);
 		if (typeof tiddlerFields.revision !== "undefined") delete tiddlerFields.revision;
 
 		tiddlerFields.title = title;
 
-		db.get(title).catch(err => {
+		db.allDocs({
+			keys: db.getIDsFromRecipeTitle(recipe, title)
+		}).then(docs => {
+			console.log(docs);
+		});
+
+		db.get(id).catch(err => {
 			//if the tiddler doesn't exist we return a template object
 			//else we just throw the error on down the chain
 			if (err && err.name === "not_found") {
-				return { _id: title, revision: 0 };
+				return { _id: id, revision: 0 };
 			} else {
 				return Promise.reject(err);
 			}

@@ -6,7 +6,6 @@ module-type: route
 PUT /recipes/default/tiddlers/:title
 
 \*/
-/// <reference path="../../types.d.ts" />
 (function () {
 
 	/*jslint node: true, browser: true */

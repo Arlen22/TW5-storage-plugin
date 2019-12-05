@@ -1,18 +1,20 @@
 [
   {
-    "created": "2019-12-05T00:55:23.040Z",
+    "created": "2019-12-05T20:24:19.734Z",
     "title": "$:/StoryList",
-    "list": [],
+    "list": [
+      "GettingStarted"
+    ],
     "type": "text/vnd.tiddlywiki",
-    "revision": "22",
+    "revision": "6",
     "bag": "default",
-    "modified": "2019-12-05T00:55:23.040Z"
+    "modified": "2019-12-05T20:24:19.734Z"
   },
   {
     "title": "Test",
-    "created": "20191204215054201",
-    "modified": "20191205004918644",
-    "revision": "5",
+    "created": "20191205194002124",
+    "modified": "20191205194908488",
+    "revision": "2",
     "tags": "",
     "type": "text/vnd.tiddlywiki",
     "bag": "default"

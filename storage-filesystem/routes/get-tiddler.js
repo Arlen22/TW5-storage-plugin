@@ -28,8 +28,8 @@ GET /recipes/default/tiddlers/:title
 		var recipe = decodeURIComponent(state.params[0]);
 		var title = decodeURIComponent(state.params[1]);
 
-		state.server.loadTiddlerFile(recipe, title).catch(err => { err }).then(({err, tiddler}) => {
-			if(err)console.log(err);
+		state.server.loadTiddlerFile(recipe, title).catch(err => { err }).then(({ err, tiddler }) => {
+			if (err) console.log(err);
 			response.writeHead(err ? 404 : 200, { "Content-Type": "application/json" });
 			if (!err) response.write(JSON.stringify(tiddler), "utf8");
 			response.end();

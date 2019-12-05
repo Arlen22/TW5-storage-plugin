@@ -42,6 +42,7 @@ PUT /recipes/default/tiddlers/:title
 			});
 			response.end();
 		}).catch(err => {
+			console.log(err);
 			response.writeHead(500);
 			response.end();
 		});

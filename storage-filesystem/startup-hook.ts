@@ -21,7 +21,7 @@ Command processing
   exports.synchronous = true;
 
   exports.startup = function () {
-    $tw.hooks.addHook("th-server-command-post-start", (wikiServer, nodeServer, platform) => {
+    $tw.hooks.addHook("th-server-command-post-start", (wikiServer: any, nodeServer: any, platform: any) => {
       let add = new TiddlyWikiServer();
       Object.assign(wikiServer, TiddlyWikiServer.prototype, add);
     });
@@ -30,28 +30,10 @@ Command processing
 
 })();
 
-
-// import { promisify } from "util";
-// import * as fs from "fs";
-// import * as path from "path";
-const path: typeof import ("path") = $tw.node && require("path");
+const path: typeof import("path") = $tw.node && require("path");
 const fs: typeof import("fs") = $tw.node && require('fs');
 const promisify: typeof import("util").promisify = $tw.node && require("util").promisify;
-// // console.log("adding hook");
-
-//   //Currently TiddlyWiki5 doesn't use bags and recipes
-// declare namespace PouchDB {
-//   declare interface Database {
-
-//   }
-// }
 declare const $tw: any;
-// declare namespace $tw {
-//   declare interface Tiddler {
-
-//   }
-// }
-
 
 declare interface FileInfo {
   /** filepath: the absolute path to the file containing the tiddler */
@@ -64,16 +46,18 @@ declare interface FileInfo {
   bag: string;
 }
 
+interface ITiddlyWikiServer extends TiddlyWikiServer { }
+
 class TiddlyWikiServer {
-  
+
   wiki: any;
   constructor() {
     this.files = {};
     this.recipes = { "default": { bags: ["default"] } };
     this.clientTiddlersPath = path.join($tw.boot.wikiPath, "tiddlyweb");
     this.filesCachePath = path.join($tw.boot.wikiPath, "tiddlyweb-files.json");
-    let stiddlers = this.initSkinnyTiddlers("default");
-    this.saveSkinnyTiddlers("default", stiddlers).then(() => { console.log("ready"); });
+    let stiddlers = this.initSkinnyTiddlers();
+    this.saveSkinnyTiddlers("default", stiddlers["default"]).then(() => { console.log("ready"); });
   }
   getIDsFromRecipeTitle(recipe: string, title: string): string[] {
     return this.recipes[recipe].bags.map(e => this.getIDFromBagTitle(e, title));
@@ -119,7 +103,7 @@ class TiddlyWikiServer {
   // async loadTiddlerFile(recipe: string, title: string): Promise<any>;
   // async saveTiddlerFile(recipe: string, tiddler: any): Promise<{ bag: string, revision: string }>;
   // async deleteTiddlerFile(bag: string, title: string): Promise<void>;
-  async loadTiddlerFile(recipe, title) {
+  async loadTiddlerFile(recipe: string, title: string) {
     function handleError() {
       this.deleteTitleFileInfo(recipe, title);
       return Promise.reject(new Error(`Tiddler ${title} doesn't exist in recipe ${recipe}`));
@@ -135,7 +119,7 @@ class TiddlyWikiServer {
     /** @type { FileInfo & { tiddlers: any[] } */
     var data = $tw.loadTiddlersFromFile(fileInfo.filepath);
     var tiddlers = {};
-    data.tiddlers.forEach(e => {
+    data.tiddlers.forEach((e: { title: string | number; }) => {
       this.files[e.title] = Object.assign({}, data);
       this.files[e.title]["tiddlers"] = undefined;
       tiddlers[e.title] = e;
@@ -145,7 +129,7 @@ class TiddlyWikiServer {
 
     return { tiddler: tiddlers[title] };
   };
-  async saveTiddlerFile(recipe, fields) {
+  async saveTiddlerFile(recipe: string, fields: { title: any; revision: string; bag: any; }): Promise<{ bag: any, revision: any }> {
     let stiddlers = await this.loadSkinnyTiddlers(recipe).catch(console.log) || [];
 
     console.log("saving %s %s", recipe, fields.title);
@@ -167,7 +151,7 @@ class TiddlyWikiServer {
     return Promise.all([
       this.saveSkinnyTiddlers(recipe, stiddlers),
       new Promise((resolve, reject) => {
-        $tw.utils.saveTiddlerToFile(tiddler, fileInfo, function (err2) {
+        $tw.utils.saveTiddlerToFile(tiddler, fileInfo, function (err2: any) {
           if (err2) return reject(err2);
           return resolve()
         });
@@ -177,17 +161,24 @@ class TiddlyWikiServer {
   }
 
 
-  async deleteTiddlerFile(bag, title) {
-    return new Promise<void>((resolve, reject) => ((callback) => {
-      var old_callback = callback;
-      callback = (err) => {
-        if (err) return reject(err);
-        var finished = [];
+  async deleteTiddlerFile(bag: string, title: string) {
+
+    var fileInfo = this.files[bag][title];
+    console.log("deleting %s", bag, title);
+    // Only delete the tiddler if we have writable information for the file
+    // and the bag matches the bag specifed in the url
+    if (fileInfo && fileInfo.bag === bag) {
+      // Delete the file
+      return Promise.all([
+        promisify(fs.unlink)(fileInfo.filepath),
+        fileInfo.hasMetaFile ? promisify(fs.unlink)(fileInfo.filepath + ".meta") : Promise.resolve()
+      ]).then(() => {
+        return promisify($tw.utils.deleteEmptyDirs)(path.dirname(fileInfo.filepath))
+      }).then(() => {
         var recipesToUpdate = Object.keys(this.recipes).filter((k) => {
           return this.recipes[k].bags.indexOf(bag) !== -1;
         });
-
-        resolve(Promise.all(recipesToUpdate.map(async (recipe) => {
+        return Promise.all(recipesToUpdate.map(async (recipe) => {
           let skinny = await this.loadSkinnyTiddlers(recipe).catch(() => []);
           if (!skinny.length) return;
           var currentIndex = skinny.findIndex(e => e.title === title);
@@ -195,38 +186,11 @@ class TiddlyWikiServer {
           if (current.bag !== bag) return;
           else skinny.splice(currentIndex, 1);
           return this.saveSkinnyTiddlers(recipe, skinny);
-        })).then(() => old_callback(null)));
-      }
-      var fileInfo = this.files[bag][title];
-      console.log("deleting %s", bag, title);
-      // Only delete the tiddler if we have writable information for the file
-      // and the bag matches the bag specifed in the url
-      if (fileInfo && fileInfo.bag === bag) {
-        // Delete the file
-        fs.unlink(fileInfo.filepath, function (err) {
-          if (err) {
-            return callback(err);
-          }
-          // Delete the metafile if present
-          if (fileInfo.hasMetaFile) {
-            fs.unlink(fileInfo.filepath + ".meta", function (err) {
-              if (err) {
-                return callback(err);
-              }
-              return $tw.utils.deleteEmptyDirs(path.dirname(fileInfo.filepath), callback);
-            });
-          }
-          else {
-            return $tw.utils.deleteEmptyDirs(path.dirname(fileInfo.filepath), callback);
-          }
-        });
-      } else {
-        callback(null);
-      }
-    })(function (err) {
-      if (err) reject(err);
-      else resolve();
-    }));
+        }));
+      });
+    }
+    //returning nothing in async is the same as the former callback(null)
+
   }
 
 
@@ -242,34 +206,61 @@ class TiddlyWikiServer {
       "utf8"
     );
   }
-  initSkinnyTiddlers(recipe: string): any[] {
-    var tiddlers = [];
-    var titlesIndex = {};
-    this.recipes[recipe].bags.forEach(bag => {
+  initSkinnyTiddlers(): Record<string, any[]> {
+    var tiddlers: Record<string, Record<string, any>> = {};
+    var bags = [];
+    //get a list of all loaded bags (so we don't duplicate work)
+    Object.keys(this.recipes).map(e => this.recipes[e].bags.forEach(f => {
+      if (bags.indexOf(f) === -1) bags.push(f);
+    }));
+    //load the tiddlers in each bag
+    bags.forEach(bag => {
       this.files[bag] = {};
+      tiddlers[bag] = {};
       var bagpath = path.join(this.clientTiddlersPath, bag);
-      $tw.utils.each($tw.loadTiddlersFromPath(bagpath), (tiddlerFile) => {
+      //iterate through each file
+      $tw.utils.each($tw.loadTiddlersFromPath(bagpath), (tiddlerFile: FileInfo & { tiddlers: any[] }) => {
+        //if this is a writable file (tiddlyweb does not support unwritable files)
         if (tiddlerFile.filepath) {
-          $tw.utils.each(tiddlerFile.tiddlers, (tiddler) => {
-            //titles in higher bags override titles in lower bags
-            if (titlesIndex[tiddler.title] === undefined) {
-              tiddler.text = undefined;
-              tiddler.bag = bag;
-
-              this.files[bag][tiddler.title] = {
-                filepath: tiddlerFile.filepath,
-                type: tiddlerFile.type,
-                hasMetaFile: tiddlerFile.hasMetaFile,
-                bag: bag
-              };
-              titlesIndex[tiddler.title] = tiddlers.length;
-              tiddlers.push(tiddler);
-            }
+          //iterate through the tiddlers in the file
+          $tw.utils.each(tiddlerFile.tiddlers, (tiddler: { title: string; text: any; bag: string; }) => {
+            //this is a skinny tiddler
+            tiddler.text = undefined;
+            //set the bag so tiddlyweb knows to update it
+            tiddler.bag = bag;
+            //get the file info
+            this.files[bag][tiddler.title] = {
+              filepath: tiddlerFile.filepath,
+              type: tiddlerFile.type,
+              hasMetaFile: tiddlerFile.hasMetaFile,
+              bag: bag
+            };
+            //add it to the bag
+            if (tiddlers[bag][tiddler.title])
+              console.log("More than one tiddler %s was found in bag %s", bag, tiddler.title);
+            tiddlers[bag][tiddler.title] = tiddler;
           });
         }
       });
     });
-    return tiddlers;
+    //generate the final Hashmap of recipes
+    var recipeTiddlers: Record<string, Record<string, any>> = {};
+    var recipeTiddlersRes: Record<string, any[]> = {};
+    Object.keys(this.recipes).map(recipe => {
+      recipeTiddlers[recipe] = {};
+      //iterate through the bags 
+      this.recipes[recipe].bags.forEach(bag => {
+        //iterate through the tiddlers in the bag
+        Object.keys(tiddlers[bag]).forEach(title => {
+          //only add tiddlers that don't already exist
+          if (!recipeTiddlers[recipe][title])
+            recipeTiddlers[recipe][title] = tiddlers[bag][title];
+        })
+      });
+      // convert the recipes to a hashmap of arrays
+      recipeTiddlersRes[recipe] = Object.keys(recipeTiddlers[recipe]).map(title => recipeTiddlers[recipe][title]);
+    });
+    return recipeTiddlersRes;
   }
 
   /**
@@ -282,7 +273,7 @@ class TiddlyWikiServer {
         "bag", "created", "creator", "modified", "modifier", "permissions", "recipe", "revision", "tags", "text", "title", "type", "uri"
       ];
     if (tiddler) {
-      $tw.utils.each(tiddler.fields, function (fieldValue, fieldName) {
+      $tw.utils.each(tiddler.fields, function (fieldValue: any, fieldName: string) {
         var fieldString = fieldName === "tags" ?
           tiddler.fields.tags :
           tiddler.getFieldString(fieldName); // Tags must be passed as an array, not a string
@@ -305,12 +296,12 @@ class TiddlyWikiServer {
   /*
   Convert a field set in TiddlyWeb format into ordinary TiddlyWiki5 format
   */
-  convertTiddlerFromTiddlyWebFormat(tiddlerFields) {
+  convertTiddlerFromTiddlyWebFormat(tiddlerFields: { [x: string]: any; }) {
     var result = {} as any;
     // Transfer the fields, pulling down the `fields` hashmap
-    $tw.utils.each(tiddlerFields, function (element, title, object) {
+    $tw.utils.each(tiddlerFields, function (element: any, title: string, object: any) {
       if (title === "fields") {
-        $tw.utils.each(element, function (element, subTitle, object) {
+        $tw.utils.each(element, function (element: any, subTitle: string | number, object: any) {
           result[subTitle] = element;
         });
       } else {

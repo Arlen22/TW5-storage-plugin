@@ -31,6 +31,7 @@ DELETE /recipes/default/tiddlers/:title
 		state.server.deleteTiddlerFile(bag, title).then(() => callback(null)).catch((err) => callback(err));
 
 		function callback(err) {
+			if(err) console.log(err);
 			response.writeHead(err ? 500 : 204, { "Content-Type": "text/plain" });
 			response.end();
 		}

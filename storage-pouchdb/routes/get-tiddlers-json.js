@@ -6,7 +6,6 @@ module-type: route
 GET /recipes/default/tiddlers/tiddlers.json
 
 \*/
-/// <reference path="../../types.d.ts" />
 (function () {
 
 	/*jslint node: true, browser: true */

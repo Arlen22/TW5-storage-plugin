@@ -31,9 +31,12 @@ Command processing
 })();
 
 
-// const path = require("path");
-// const fs: typeof import("fs") = require('fs');
-// const promisify: typeof import("util").promisify = require("util").promisify;
+// import { promisify } from "util";
+// import * as fs from "fs";
+// import * as path from "path";
+const path: typeof import ("path") = $tw.node && require("path");
+const fs: typeof import("fs") = $tw.node && require('fs');
+const promisify: typeof import("util").promisify = $tw.node && require("util").promisify;
 // // console.log("adding hook");
 
 //   //Currently TiddlyWiki5 doesn't use bags and recipes
@@ -49,9 +52,6 @@ declare const $tw: any;
 //   }
 // }
 
-import { promisify } from "util";
-import * as fs from "fs";
-import * as path from "path";
 
 declare interface FileInfo {
   /** filepath: the absolute path to the file containing the tiddler */
@@ -65,6 +65,7 @@ declare interface FileInfo {
 }
 
 class TiddlyWikiServer {
+  
   wiki: any;
   constructor() {
     this.files = {};

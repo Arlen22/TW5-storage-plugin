@@ -35,7 +35,7 @@ const fs: typeof import("fs") = $tw.node && require('fs');
 const promisify: typeof import("util").promisify = $tw.node && require("util").promisify;
 declare const $tw: any;
 
-declare interface FileInfo {
+interface FileInfo {
   /** filepath: the absolute path to the file containing the tiddler */
   filepath: string;
   /** type: the type of the tiddler file (NOT the type of the tiddler -- see below) */
@@ -45,6 +45,37 @@ declare interface FileInfo {
   /** bag: the bag this file is in */
   bag: string;
 }
+interface BagAccess {
+  allowDelete: boolean;
+  allowUpdate: boolean;
+  allowCreate: boolean;
+}
+interface BagInfo {
+  id: string;
+  access: BagAccess;
+}
+
+function access(allowCreate: boolean, allowUpdate: boolean, allowDelete: boolean): BagAccess {
+  return { allowCreate, allowUpdate, allowDelete };
+}
+const Roles/* : Record<"regular", BagAccess>  */ = {
+  /** normal bag that a user can modify as desired */
+  regular: access(true, true, true), //everything
+  /** journal bag where tiddlers can only be created, and never change -- useful for automated logs (or chats) */
+  journal: access(true, false, false), 
+  /** static bag where tiddlers can be edited but not created or deleted -- useful for ... group chat description? */
+  static: access(false, true, false), 
+  /** import bag where tiddlers can only be deleted -- once they've been processed? */
+  import: access(false, false, true),
+  /** tracked bag where tiddlers can be created and editted but not deleted -- useful for edit history */
+  tracked: access(true, true, false), 
+  /** snapshot bag where tiddlers can only be created and deleted -- kind of pointless */
+  snapshot: access(true, false, true),
+  /** multi-import bag where tiddlers can be modified and deleted but not created -- processing before import? */
+  multi_import: access(false, true, true),
+  /** readonly bag where nothing can be done */
+  readonly: access(false, false, false)
+}
 
 interface ITiddlyWikiServer extends TiddlyWikiServer { }
 
@@ -53,20 +84,20 @@ class TiddlyWikiServer {
   wiki: any;
   constructor() {
     this.files = {};
-    this.recipes = { "default": { bags: ["default"] } };
+    this.recipes = { "default": { bags: [{ id: "default", access: Roles.regular }] } };
     this.clientTiddlersPath = path.join($tw.boot.wikiPath, "tiddlyweb");
     this.filesCachePath = path.join($tw.boot.wikiPath, "tiddlyweb-files.json");
     let stiddlers = this.initSkinnyTiddlers();
     this.saveSkinnyTiddlers("default", stiddlers["default"]).then(() => { console.log("ready"); });
   }
   getIDsFromRecipeTitle(recipe: string, title: string): string[] {
-    return this.recipes[recipe].bags.map(e => this.getIDFromBagTitle(e, title));
+    return this.recipes[recipe].bags.map(e => this.getIDFromBagTitle(e.id, title));
   };
   getIDFromBagTitle(bag: string, title: string): string {
     return bag + "|" + title
   }
   files: Record<string, Record<string, FileInfo>>;
-  recipes: Record<string, { bags: string[] }>;
+  recipes: Record<string, { bags: BagInfo[] }>;
   clientTiddlersPath: string;
   filesCachePath: string;
   // stiddlers?: any[];
@@ -112,7 +143,7 @@ class TiddlyWikiServer {
     console.log("loading %s %s", recipe, title);
     var stiddlers = await this.loadSkinnyTiddlers(recipe);
     let current = stiddlers.find(e => e.title === title);
-    let bag = current ? current.bag : this.recipes[recipe].bags[0];
+    let bag = current ? current.bag : this.recipes[recipe].bags[0].id;
     var fileInfo = this.getTitleFileInfo(bag, title);
 
     if (!fileInfo || !fs.existsSync(fileInfo.filepath)) return handleError();
@@ -137,7 +168,7 @@ class TiddlyWikiServer {
       current = stiddlers[currentIndex];
     fields.revision = ((current && +current.revision || 0) + 1).toString();
     //new tiddlers always get saved in the first bag
-    fields.bag = current ? current.bag : this.recipes[recipe].bags[0];
+    fields.bag = current ? current.bag : this.recipes[recipe].bags[0].id;
     var tiddler = new $tw.Tiddler(this.wiki.getCreationFields(), fields, this.wiki.getModificationFields());
 
     let fileInfo = await this.getTiddlerFileInfo(tiddler);
@@ -176,7 +207,7 @@ class TiddlyWikiServer {
         return promisify($tw.utils.deleteEmptyDirs)(path.dirname(fileInfo.filepath))
       }).then(() => {
         var recipesToUpdate = Object.keys(this.recipes).filter((k) => {
-          return this.recipes[k].bags.indexOf(bag) !== -1;
+          return this.recipes[k].bags.findIndex(e => e.id === bag) !== -1;
         });
         return Promise.all(recipesToUpdate.map(async (recipe) => {
           let skinny = await this.loadSkinnyTiddlers(recipe).catch(() => []);
@@ -208,10 +239,10 @@ class TiddlyWikiServer {
   }
   initSkinnyTiddlers(): Record<string, any[]> {
     var tiddlers: Record<string, Record<string, any>> = {};
-    var bags = [];
+    var bags: string[] = [];
     //get a list of all loaded bags (so we don't duplicate work)
     Object.keys(this.recipes).map(e => this.recipes[e].bags.forEach(f => {
-      if (bags.indexOf(f) === -1) bags.push(f);
+      if (bags.indexOf(f.id) === -1) bags.push(f.id);
     }));
     //load the tiddlers in each bag
     bags.forEach(bag => {
@@ -251,10 +282,10 @@ class TiddlyWikiServer {
       //iterate through the bags 
       this.recipes[recipe].bags.forEach(bag => {
         //iterate through the tiddlers in the bag
-        Object.keys(tiddlers[bag]).forEach(title => {
+        Object.keys(tiddlers[bag.id]).forEach(title => {
           //only add tiddlers that don't already exist
           if (!recipeTiddlers[recipe][title])
-            recipeTiddlers[recipe][title] = tiddlers[bag][title];
+            recipeTiddlers[recipe][title] = tiddlers[bag.id][title];
         })
       });
       // convert the recipes to a hashmap of arrays

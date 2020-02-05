@@ -1,14 +1,30 @@
 [
   {
-    "created": "2019-12-05T20:24:19.734Z",
     "title": "$:/StoryList",
-    "list": [
-      "GettingStarted"
-    ],
+    "created": "20191206200440824",
+    "list": "[[Main Menu]]",
+    "modified": "20191206200440824",
+    "revision": "29",
     "type": "text/vnd.tiddlywiki",
-    "revision": "6",
-    "bag": "default",
-    "modified": "2019-12-05T20:24:19.734Z"
+    "bag": "default"
+  },
+  {
+    "title": "Main Menu",
+    "created": "20191206171352749",
+    "modified": "20191206171427691",
+    "revision": "1",
+    "tags": "",
+    "type": "text/vnd.tiddlywiki",
+    "bag": "default"
+  },
+  {
+    "title": "Test this out",
+    "created": "20191206145725102",
+    "modified": "20191206145742499",
+    "revision": "1",
+    "tags": "",
+    "type": "text/vnd.tiddlywiki",
+    "bag": "default"
   },
   {
     "title": "Test",
@@ -16,6 +32,24 @@
     "modified": "20191205194908488",
     "revision": "2",
     "tags": "",
+    "type": "text/vnd.tiddlywiki",
+    "bag": "default"
+  },
+  {
+    "title": "Video 1",
+    "created": "20191206171336478",
+    "modified": "20191206171351850",
+    "revision": "1",
+    "tags": "Videos",
+    "type": "text/vnd.tiddlywiki",
+    "bag": "default"
+  },
+  {
+    "title": "Video 2",
+    "created": "20191206171407119",
+    "modified": "20191206171414750",
+    "revision": "1",
+    "tags": "Videos",
     "type": "text/vnd.tiddlywiki",
     "bag": "default"
   }
